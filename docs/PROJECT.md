@@ -31,3 +31,4 @@ Last updated: 2026-10-15
 | Date | What changed and why |
 |---|---|
 | 2026-10-04 | Draft for consultation |
+| 2026-10-15 | What & Status Updated |
