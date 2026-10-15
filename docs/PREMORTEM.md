@@ -3,7 +3,7 @@
 Team: Team 13 — 읽씹방지위원회  
 Members: 김이서, 손영훈, 한민수, 홍하경  
 Merged on: 2026-10-04  
-Last updated: 2026-10-05
+Last updated: 2026-10-15
 
 ## 1. Individual lists
 
@@ -12,7 +12,7 @@ Last updated: 2026-10-05
 | 김이서 | `docs/premortem/김이서.md` | 2026-10-01 | 5 |
 | 손영훈 | `docs/premortem/손영훈.md` | 2026-10-04 | 5 |
 | 한민수 | `docs/premortem/한민수.md` | 2026-10-04 | 5 |
-| 홍하경 | `docs/premortem/홍하경.md` | 2026-10-01 | 7 |
+| 홍하경 | `docs/premortem/hakyung.md` | 2026-10-01 | 8 |
 
 ## 2. Read-out
 
@@ -65,7 +65,7 @@ People have to feel safe saying the awkward one, so the only allowed response is
 |---|---|
 | 2026-10-05 | Draft for consultation |
 | 2026-10-05 | Merged individual premortems, documented single-person risks, and drafted three action items for team confirmation |
-
+| 2026-10-15 | Updated individual file paths to English names after members committed their revised premortems |
 ---
 
 Method note: Gary Klein, "Performing a Project Premortem", Harvard Business Review, September 2007.
