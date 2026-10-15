@@ -1,7 +1,7 @@
 # QUESTIONS.md
 
 Team: 13조
-Last updated: 2026-10-04
+Last updated: 2026-10-15
 
 Your biggest open questions about this project.
 Write this together, after the premortem merge.
@@ -60,7 +60,7 @@ Fill this in within a week of your slot.
 
 | # | What we heard | What we will do about it | Owner | By when |
 |---|---|---|---|---|
-| 1 | | | | |
+| 1 | 인터뷰 [링크](https://docs.google.com/spreadsheets/d/1SL52bwUPSMwglnReEYyZX_uutS1Ci-ySmnJign_oY3U/edit?gid=1605498539#gid=1605498539) | 정리중 | 손영훈 | 2026-10-18 |
 | 2 | | | | |
 | 3 | | | | |
 
@@ -69,3 +69,4 @@ Fill this in within a week of your slot.
 | Date | What changed and why |
 |---|---|
 | 2026-10-04 | Draft for consultation |
+| 2026-10-15 | 상담 후 SDR 인터뷰 결과를 `After the consultation` 1번에 기록했다. |
