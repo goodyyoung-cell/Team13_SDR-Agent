@@ -6,7 +6,7 @@ Last updated: 2026-10-04
 
 ## What we think we are building
 
-중소기업 고객사를 대상으로, 초기 영업 단계의 반복적인 고객 리서치·접촉·선별 업무를 수행하는 Sales Development Representative(SDR) Agent의 프로토타입을 만든다. SDR Agent가 초기 영업 및 상담 단계에서 Lead를 선별하고 Nurturing한 뒤, 유효한 영업기회라고 판단되면 필드세일즈에 인계함으로써 영업 프로세스의 효율성과 생산성을 높이는 것을 목표로 한다.
+중소기업 고객사를 대상으로, 초기 영업 단계의 반복적인 고객 리서치·접촉·선별 업무를 수행하는 Sales Development Representative(SDR) Agent의 프로토타입을 만든다. SDR Agent가 초기 영업 및 상담 단계에서 Lead를 선별하고 Nurturing한 뒤, 유효한 영업기회라고 판단되면 필드세일즈에 인계하는 여정에서, 업무 프로세스의 효율성과 생산성을 높이는 서비스를 제공하는 에이전트 프로토타입을 빌드하는 것을 궁극적인 목표로 한다. 
 
 ## Who it is for
 
