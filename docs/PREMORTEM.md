@@ -66,6 +66,8 @@ People have to feel safe saying the awkward one, so the only allowed response is
 | 2026-10-05 | Draft for consultation |
 | 2026-10-05 | Merged individual premortems, documented single-person risks, and drafted three action items for team confirmation |
 | 2026-10-15 | Updated 홍하경's file path to docs/premortem/hakyung.md and cause count to 8 after the revised premortem was committed |
+| 2026-10-15 | 모든 팀원의 개인 premortem 커밋 이후, 저장소 오너가 최종본으로 커밋 |
+
 ---
 
 Method note: Gary Klein, "Performing a Project Premortem", Harvard Business Review, September 2007.
