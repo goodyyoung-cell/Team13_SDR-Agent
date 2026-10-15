@@ -2,7 +2,7 @@
 
 Team: Team 13 — 읽씹방지위원회  
 Members: 김이서, 손영훈, 한민수, 홍하경  
-Last updated: 2026-10-04
+Last updated: 2026-10-15
 
 ## What we think we are building
 
