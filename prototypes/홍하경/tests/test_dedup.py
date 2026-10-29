@@ -1,4 +1,4 @@
-"""실행: prototypes/hakyung 폴더에서 python -m unittest"""
+"""실행: prototypes/홍하경 폴더에서 python -m unittest"""
 
 import csv
 import unittest
@@ -22,7 +22,7 @@ def judge_sample(check):
 
 
 class HandChecks(unittest.TestCase):
-    """docs/specs/hakyung-dedup.md의 '손으로 하는 확인' 세 가지."""
+    """docs/specs/홍하경-dedup.md의 '손으로 하는 확인' 세 가지."""
 
     def test_check1_same_phone_different_format_is_blocked(self):
         result = judge_sample("check1")
