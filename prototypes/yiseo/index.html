@@ -244,22 +244,29 @@ async function callGemini(prompt){
   if(!CONFIG.GEMINI_API_KEY) return null
   try {
     var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-              CONFIG.GEMINI_MODEL + ':generateContent?key=' + CONFIG.GEMINI_API_KEY
+              CONFIG.GEMINI_MODEL + ':generateContent'
     var resp = await fetch(url, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-goog-api-key': CONFIG.GEMINI_API_KEY
+      },
       body: JSON.stringify({
         contents:[{parts:[{text:prompt}]}],
         generationConfig:{maxOutputTokens:200, temperature:0.2}
       })
     })
-    if(!resp.ok) return null
+    if(!resp.ok){
+      var errData = await resp.json().catch(function(){ return {} })
+      var errMsg = (errData.error && errData.error.message) || resp.statusText || '알 수 없는 오류'
+      return {error: 'HTTP ' + resp.status + ': ' + errMsg}
+    }
     var data = await resp.json()
     var text = data.candidates&&data.candidates[0]&&
                data.candidates[0].content&&data.candidates[0].content.parts&&
                data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text
-    return (text||'').trim() || null
-  } catch(e){ return null }
+    return {text: (text||'').trim() || null}
+  } catch(e){ return {error: '네트워크 오류: ' + (e.message||String(e))} }
 }
 
 // ── process ──────────────────────────────────────────────────────────────────
@@ -287,6 +294,7 @@ async function handleProcess(){
       intraCSV: intraCSV,
       matches: m.matches,
       llmSummary: null,
+      llmError: null,
       resolution: null,
       disposition: null
     }
@@ -298,7 +306,11 @@ async function handleProcess(){
     var summaries = await Promise.all(targets.map(function(r){
       return callGemini(buildPrompt(r.lead, r.matches))
     }))
-    targets.forEach(function(r, i){ r.llmSummary = summaries[i] })
+    targets.forEach(function(r, i){
+      var res = summaries[i]
+      if(res && res.text) r.llmSummary = res.text
+      else if(res && res.error) r.llmError = res.error
+    })
   }
 
   document.getElementById('loading').hidden = true
@@ -357,6 +369,9 @@ function summaryHTML(r){
   var ids = [...new Set(r.matches.map(function(m){return m.row.source_id}))].join(', ')
   if(r.llmSummary)
     return '<div class="summary-block summary-ai"><div class="summary-label">AI 요약</div>'+esc(r.llmSummary)+'<span class="src-ids">('+esc(ids)+')</span></div>'
+  var errorNote = r.llmError
+    ? '<div style="font-size:12px;color:#dc2626;margin-bottom:6px">AI 요약 실패: '+esc(r.llmError)+'</div>'
+    : ''
   // Structured fallback
   var lines = r.matches.map(function(m){
     var row = m.row
@@ -364,7 +379,7 @@ function summaryHTML(r){
     if(m.source==='slack') return row.date+' Slack '+row.sender_name+': '+row.message_text
     return row.date+' 이메일 '+row.subject+': '+row.body_snippet
   })
-  return '<div class="summary-block summary-fallback"><div class="summary-label">구조화된 이력 요약</div>'+esc(lines.join(' | '))+'<span class="src-ids">('+esc(ids)+')</span></div>'
+  return errorNote+'<div class="summary-block summary-fallback"><div class="summary-label">구조화된 이력 요약</div>'+esc(lines.join(' | '))+'<span class="src-ids">('+esc(ids)+')</span></div>'
 }
 
 function cardHTML(r, i){
