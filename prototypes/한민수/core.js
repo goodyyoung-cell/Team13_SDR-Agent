@@ -56,6 +56,9 @@
     INTEREST: /관심(이|은)?\s?(있|많)|데모|미팅|자세히|소개\s?자료|견적|가격|일정|interested|demo|pricing/i
   }
 
+  // "나중에" 중에서 날짜나 방식을 콕 집은 요청. 막연한 "다음 분기"와 구분한다.
+  var SPECIFIC_WHEN = /\d{1,2}\s?월|\d{1,2}\s?일|\d{4}\s?년|(첫|둘|셋|넷|마지막)째\s?주|월요일|화요일|수요일|목요일|금요일|오전|오후|전화\s?(주|해)|통화|이메일\s?(말고|대신)|메일\s?말고/
+
   function parseCSV(text) {
     var rows = []
     var row = []
@@ -243,8 +246,12 @@
       }
     }
     else if (last.cls === CLASSES.LATER) {
-      var rc = bizShift(sd, last.day + o.recontactDays, o.holidays)
-      status = STATUS.RECONTACT; next = rc + '일째' + lab(rc) + '에 자동으로 다시 연락. 사람은 손대지 않는다'
+      if (SPECIFIC_WHEN.test(last.body || '')) {
+        status = STATUS.HUMAN; next = '날짜나 방식을 콕 집은 요청이라 자동 재연락을 하지 않고 사람이 확인한다'
+      } else {
+        var rc = bizShift(sd, last.day + o.recontactDays, o.holidays)
+        status = STATUS.RECONTACT; next = rc + '일째' + lab(rc) + '에 자동으로 다시 연락. 사람은 손대지 않는다'
+      }
     }
     else if (last.cls === CLASSES.AUTO) {
       if (resendDay <= day) { status = STATUS.RESENT; next = '재발송 후 답장 대기' }

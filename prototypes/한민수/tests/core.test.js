@@ -19,8 +19,8 @@ const kinds = (p) => p.mails.map((m) => m.kind)
 const days = (p) => p.mails.map((m) => m.day)
 const synth = (replyDay, body, day, opts) => C.plan({ lead_name: 'x', company: 'A' }, [{ day: replyDay, body }], day, Object.assign({ startDate: START }, opts || {}))
 
-test('손으로 정한 정답과 비교 (21일째): 12명 전부 일치', () => {
-  assert.equal(expected.length, 12)
+test('손으로 정한 정답과 비교 (21일째): 13명 전부 일치', () => {
+  assert.equal(expected.length, 13)
   const wrong = []
   for (const e of expected) {
     const p = planAt(e.lead_name, 21)
@@ -196,7 +196,7 @@ test('결정 C: 나중에는 초안도 없이 자동 재연락, 사람이 손대
 test('결정 C: 사람 몫은 관심 있음과 사람 확인 둘뿐이다', () => {
   const human = new Set([C.STATUS.HANDOFF, C.STATUS.HUMAN])
   const rest = leads.map((l) => planAt(l.lead_name, 21)).filter((p) => human.has(p.status))
-  assert.equal(rest.length, 4) // 윤서준, 탁수아, 전현우, 차은서
+  assert.equal(rest.length, 5) // 윤서준, 탁수아, 전현우, 차은서, 마도현
   for (const l of leads) {
     const p = planAt(l.lead_name, 21)
     if (!human.has(p.status)) assert.equal(p.draft, null, l.lead_name)
@@ -238,4 +238,28 @@ test('첫 메일 발송일이 공휴일이면 첫 메일도 다음 평일', () =
 
 test('공휴일을 안 넣으면 이전 규칙과 같다', () => {
   assert.deepEqual(days(planAt('노유나', 21, { holidays: [] })), [0, 5, 12])
+})
+
+test('나중에 - 막연한 시점은 자동 재연락, 날짜·방식을 콕 집으면 사람 확인', () => {
+  const vague = synth(6, '다음 분기에 연락 주세요', 21)
+  assert.equal(vague.status, C.STATUS.RECONTACT)
+  for (const body of ['내년 3월 둘째 주에 전화 주세요', '나중에 11월 20일 이후에 연락 주세요', '화요일 오전에 통화 가능합니다 나중에 부탁드려요']) {
+    const p = synth(6, body, 21)
+    assert.equal(p.replyClass, C.CLASSES.LATER, body)
+    assert.equal(p.status, C.STATUS.HUMAN, body)
+    assert.match(p.next, /사람이 확인/, body)
+    assert.equal(p.draft, null, body)
+  }
+})
+
+test('나중에(날짜 지정)는 자동 재연락 일정이 잡히지 않는다', () => {
+  const p = planAt('마도현', 21)
+  assert.equal(p.status, C.STATUS.HUMAN)
+  assert.ok(!/일째.*다시 연락/.test(p.next))
+})
+
+test('리드당 메일은 최대 4통까지 (첫 메일 + 후속 2 + 재발송 또는 담당자 문의 1)', () => {
+  const max = Math.max(...leads.map((l) => planAt(l.lead_name, 70).mails.length))
+  assert.ok(max <= 4)
+  assert.equal(planAt('구민재', 70).mails.length, 3)
 })
