@@ -3,7 +3,7 @@
 Team: Team 13 — 읽씹방지위원회  
 Written by: 김이서  
 Written on: 2026-10-29  
-Source: `docs/whytree/yiseo.md` — 어카운트 기회 전환 → 리드 데이터 관리 → 접촉 이력 통합 요약 (not yet done)  
+Source: `docs/whytree/김이서.md` — 어카운트 기회 전환 → 리드 데이터 관리 → 접촉 이력 통합 요약 (not yet done)  
 How it was made: `/grill-me` 세션에서 결정한 내용을 정리했다.
 
 ## 누구를 위한 것인가
