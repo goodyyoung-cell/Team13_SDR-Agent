@@ -5,4 +5,4 @@
 // If GEMINI_API_KEY is blank, the app shows structured fields instead of an AI summary.
 
 CONFIG.GEMINI_API_KEY = '';
-// CONFIG.GEMINI_MODEL = 'gemini-2.5-flash'; // optional — this is the default
+// CONFIG.GEMINI_MODEL = 'gemini-3.8-flash'; // optional — this is the default

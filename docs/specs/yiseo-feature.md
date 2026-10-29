@@ -124,7 +124,7 @@ How it was made: `/grill-me` 세션에서 결정한 내용을 정리했다.
 
 ## AI 모델과 실패 처리
 
-- **모델**: Google **Gemini 2.5 Flash** (무료 한도). 접촉 이력 한 줄 요약에만 쓴다.
+- **모델**: Google **Gemini 3.8 Flash** (무료 한도). 접촉 이력 한 줄 요약에만 쓴다.
 
 ### LLM 규칙
 
@@ -188,3 +188,4 @@ How it was made: `/grill-me` 세션에서 결정한 내용을 정리했다.
 |---|---|
 | 2026-10-29 | `/grill-me` 세션 결과로 첫 작성 |
 | 2026-10-29 | 테스트 1 기댓값 수정: fixture 빌드 과정에서 "다른 사람" 검증용 두 번째 이수진(lsj2@)과 CSV 내 중복 케이스(강동현)가 추가되어 의심 중복 1→2건, 신규 18→17건으로 변경. |
+| 2026-10-29 | gemini-2.5-flash returned 404 for new users; switched to gemini-3.8-flash. |
