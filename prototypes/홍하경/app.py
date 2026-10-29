@@ -90,4 +90,4 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     type="primary",
 )
-st.dataframe(output, use_container_width=True, hide_index=True)
+st.dataframe(output, width="stretch", hide_index=True)
