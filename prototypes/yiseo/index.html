@@ -258,8 +258,10 @@ async function callGemini(prompt){
     })
     if(!resp.ok){
       var errData = await resp.json().catch(function(){ return {} })
-      var errMsg = (errData.error && errData.error.message) || resp.statusText || '알 수 없는 오류'
-      return {error: 'HTTP ' + resp.status + ': ' + errMsg}
+      var errMsg = resp.status === 429
+        ? '429 무료 사용 한도 초과'
+        : 'HTTP ' + resp.status + ': ' + ((errData.error && errData.error.message) || resp.statusText || '알 수 없는 오류')
+      return {error: errMsg}
     }
     var data = await resp.json()
     var text = data.candidates&&data.candidates[0]&&
@@ -267,6 +269,23 @@ async function callGemini(prompt){
                data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text
     return {text: (text||'').trim() || null}
   } catch(e){ return {error: '네트워크 오류: ' + (e.message||String(e))} }
+}
+
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms) }) }
+
+async function callGeminiWithTimeout(prompt, ms){
+  var timeoutP = new Promise(function(resolve){
+    setTimeout(function(){ resolve({error:'15초 응답 없음'}) }, ms)
+  })
+  return Promise.race([callGemini(prompt), timeoutP])
+}
+
+function patchSummary(r){
+  var el = document.getElementById('sum-'+r._idx)
+  if(!el) return
+  var tmp = document.createElement('div')
+  tmp.innerHTML = summaryHTML(r, r._idx)
+  el.parentNode.replaceChild(tmp.firstChild, el)
 }
 
 // ── process ──────────────────────────────────────────────────────────────────
@@ -277,45 +296,55 @@ async function handleProcess(){
   document.getElementById('upload-section').hidden = true
   document.getElementById('loading').hidden = false
 
-  var text = await fileInput.files[0].text()
-  var rows = Papa.parse(text, {header:true, skipEmptyLines:true}).data
+  try {
+    var text = await fileInput.files[0].text()
+    var rows = Papa.parse(text, {header:true, skipEmptyLines:true}).data
 
-  // Detect intra-CSV duplicates (flag only the 2nd+ occurrence)
-  var seenEmails = {}
-  results = rows.map(function(lead, i){
-    var lEmail = (lead.lead_email||'').trim().toLowerCase()
-    var intraCSV = lEmail && seenEmails[lEmail] !== undefined
-    if(lEmail && !intraCSV) seenEmails[lEmail] = i
+    // Detect intra-CSV duplicates (flag only the 2nd+ occurrence)
+    var seenEmails = {}
+    results = rows.map(function(lead, i){
+      var lEmail = (lead.lead_email||'').trim().toLowerCase()
+      var intraCSV = lEmail && seenEmails[lEmail] !== undefined
+      if(lEmail && !intraCSV) seenEmails[lEmail] = i
 
-    var m = matchLead(lead)
-    return {
-      lead: lead,
-      matchStatus: m.status,
-      intraCSV: intraCSV,
-      matches: m.matches,
-      llmSummary: null,
-      llmError: null,
-      resolution: null,
-      disposition: null
-    }
-  })
-
-  // LLM calls in parallel for leads with history
-  if(CONFIG.GEMINI_API_KEY){
-    var targets = results.filter(function(r){return r.matches.length > 0})
-    var summaries = await Promise.all(targets.map(function(r){
-      return callGemini(buildPrompt(r.lead, r.matches))
-    }))
-    targets.forEach(function(r, i){
-      var res = summaries[i]
-      if(res && res.text) r.llmSummary = res.text
-      else if(res && res.error) r.llmError = res.error
+      var m = matchLead(lead)
+      return {
+        _idx: i,
+        lead: lead,
+        matchStatus: m.status,
+        intraCSV: intraCSV,
+        matches: m.matches,
+        llmSummary: null,
+        llmError: null,
+        resolution: null,
+        disposition: null
+      }
     })
-  }
 
-  document.getElementById('loading').hidden = true
-  document.getElementById('results-section').hidden = false
-  renderResults()
+    // Render immediately with structured fallback — never wait for LLM
+    document.getElementById('loading').hidden = true
+    document.getElementById('results-section').hidden = false
+    renderResults()
+
+    // Sequential LLM enrichment: confirmed/suspected only, 2-second gap, no retry
+    if(CONFIG.GEMINI_API_KEY){
+      var targets = results.filter(function(r){
+        return r.matchStatus==='confirmed_duplicate' || r.matchStatus==='suspected_duplicate'
+      })
+      for(var i=0; i<targets.length; i++){
+        if(i > 0) await sleep(2000)
+        var r = targets[i]
+        var res = await callGeminiWithTimeout(buildPrompt(r.lead, r.matches), 15000)
+        if(res && res.text) r.llmSummary = res.text
+        else if(res && res.error) r.llmError = res.error
+        patchSummary(r)
+      }
+    }
+  } catch(e) {
+    document.getElementById('loading').hidden = true
+    document.getElementById('results-section').hidden = false
+    if(results.length > 0) renderResults()
+  }
 }
 
 // ── rendering ────────────────────────────────────────────────────────────────
@@ -363,23 +392,24 @@ function histHTML(m){
   return '<div class="hist-row"><div class="hist-src">이메일 '+sid+' · '+esc(r.date)+'</div><div class="hist-note"><b>'+esc(r.subject)+'</b><br>'+esc(r.body_snippet)+'</div></div>'
 }
 
-function summaryHTML(r){
+function summaryHTML(r, idx){
+  var id = idx !== undefined ? ' id="sum-'+idx+'"' : ''
   if(r.matches.length===0)
-    return '<div class="summary-block summary-none"><div class="summary-label">이전 접촉</div>이전 접촉 없음</div>'
+    return '<div class="summary-block summary-none"'+id+'><div class="summary-label">이전 접촉</div>이전 접촉 없음</div>'
   var ids = [...new Set(r.matches.map(function(m){return m.row.source_id}))].join(', ')
   if(r.llmSummary)
-    return '<div class="summary-block summary-ai"><div class="summary-label">AI 요약</div>'+esc(r.llmSummary)+'<span class="src-ids">('+esc(ids)+')</span></div>'
+    return '<div class="summary-block summary-ai"'+id+'><div class="summary-label">AI 요약</div>'+esc(r.llmSummary)+'<span class="src-ids">('+esc(ids)+')</span></div>'
   var errorNote = r.llmError
     ? '<div style="font-size:12px;color:#dc2626;margin-bottom:6px">AI 요약 실패: '+esc(r.llmError)+'</div>'
     : ''
-  // Structured fallback
+  // Structured fallback — wrap with id so patchSummary can target it
   var lines = r.matches.map(function(m){
     var row = m.row
     if(m.source==='crm') return row.date+' '+ch(row.channel)+' '+row.rep_name+': '+row.outcome_note
     if(m.source==='slack') return row.date+' Slack '+row.sender_name+': '+row.message_text
     return row.date+' 이메일 '+row.subject+': '+row.body_snippet
   })
-  return errorNote+'<div class="summary-block summary-fallback"><div class="summary-label">구조화된 이력 요약</div>'+esc(lines.join(' | '))+'<span class="src-ids">('+esc(ids)+')</span></div>'
+  return '<div'+id+'>'+errorNote+'<div class="summary-block summary-fallback"><div class="summary-label">구조화된 이력 요약</div>'+esc(lines.join(' | '))+'<span class="src-ids">('+esc(ids)+')</span></div></div>'
 }
 
 function cardHTML(r, i){
@@ -424,7 +454,7 @@ function cardHTML(r, i){
         r.matches.map(histHTML).join('')+
       '</div>'+
     '</div>'+
-    summaryHTML(r)+
+    summaryHTML(r, i)+
     '<div class="dec-row">'+
       '<button class="'+sameCls+'" id="same-'+i+'">같은 사람</button>'+
       '<button class="'+diffCls+'" id="diff-'+i+'">다른 사람</button>'+
