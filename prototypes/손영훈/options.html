@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>기업조사 설정</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>body { max-width: 560px; margin: 24px auto; }</style>
+</head>
+<body>
+  <h1>기업조사 설정</h1>
+  <p class="hint">키는 이 컴퓨터의 Chrome 안(chrome.storage.local)에만 저장됩니다. 저장소나 코드에는 들어가지 않습니다.</p>
+  <form id="form" autocomplete="off">
+    <label>Gemini API 키 <small>(aistudio.google.com/app/apikey)</small>
+      <input id="geminiKey" type="password" placeholder="AIza…">
+    </label>
+    <label>DART API 키 <small>(opendart.fss.or.kr → 인증키 신청/관리)</small>
+      <input id="dartKey" type="password" placeholder="40자리">
+    </label>
+    <button type="submit">저장</button>
+    <button type="button" id="clear-cache" class="secondary">DART 회사 목록 다시 받기</button>
+  </form>
+  <p id="msg" role="status"></p>
+  <script src="options.js"></script>
+</body>
+</html>

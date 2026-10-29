@@ -1,0 +1,12 @@
+{
+  "name": "sdr-company-research-prototype",
+  "private": true,
+  "type": "module",
+  "description": "Team 13 HW6 prototype (손영훈): Chrome extension for company research before first contact.",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.5"
+  }
+}

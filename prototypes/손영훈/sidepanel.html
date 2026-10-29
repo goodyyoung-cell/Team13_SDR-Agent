@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>기업조사</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>기업조사</h1>
+    <a id="open-options" href="#" title="API 키 설정">설정</a>
+  </header>
+
+  <form id="form" autocomplete="off">
+    <label>웹사이트 주소
+      <div class="row">
+        <input id="url" type="text" placeholder="https://example.com" required>
+        <button type="button" id="use-tab" class="secondary" title="지금 보고 있는 탭의 주소로 채우기">현재 탭</button>
+      </div>
+    </label>
+    <label>회사명 <small>(DART 검색용, 비우면 DART는 건너뜀)</small>
+      <input id="name" type="text" placeholder="예: 카카오">
+    </label>
+    <button id="run" type="submit">조사</button>
+  </form>
+
+  <p id="status" role="status"></p>
+  <div id="key-warning" class="warn" hidden></div>
+
+  <section id="dart-pick" hidden>
+    <h2>DART 후보 선택</h2>
+    <p class="hint">같거나 비슷한 이름의 회사가 여러 개입니다. DART 등록 홈페이지를 보고 맞는 회사를 고르세요.</p>
+    <ul id="dart-candidates"></ul>
+    <button type="button" id="dart-skip" class="secondary">해당 회사 없음 (DART 건너뛰기)</button>
+  </section>
+
+  <section id="web-section" hidden>
+    <h2>웹사이트</h2>
+    <div id="web-body"></div>
+  </section>
+
+  <section id="dart-section" hidden>
+    <h2>DART 공시</h2>
+    <div id="dart-body"></div>
+  </section>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

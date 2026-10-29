@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "SDR 기업조사 (Team 13 prototype)",
+  "version": "0.1.0",
+  "description": "첫 연락 전에 회사 웹사이트와 DART 공시를 출처와 함께 정리해 사이드 패널에 보여 줍니다.",
+  "permissions": ["sidePanel", "storage", "unlimitedStorage", "tabs", "activeTab", "scripting"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "기업조사 열기"
+  }
+}
