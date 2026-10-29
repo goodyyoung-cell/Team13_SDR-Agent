@@ -81,7 +81,7 @@ async function run() {
     finish();
     return;
   }
-  setStatus('AI가 정리하는 중…');
+  setStatus('AI가 정리하는 중… (보통 10~30초, 최대 2분)');
   try {
     const summary = await summarizeWithGemini({
       apiKey: keys.geminiKey,

@@ -86,7 +86,8 @@ test('summarizeWithGemini: 키는 헤더로만 보내고 URL에 넣지 않으며
   assert.ok(!call.url.includes('TESTKEY'));
   assert.equal(call.opts.headers['x-goog-api-key'], 'TESTKEY');
   assert.match(call.url, /gemini-3\.8-flash:generateContent$/);
-  assert.equal(JSON.parse(call.opts.body).generationConfig.temperature, undefined); // Gemini 3.x는 temperature를 받지 않음
+  assert.equal(JSON.parse(call.opts.body).generationConfig.temperature, undefined);
+  assert.equal(JSON.parse(call.opts.body).generationConfig.thinkingConfig.thinkingLevel, 'low'); // Gemini 3.x는 temperature를 받지 않음
 });
 
 test('summarizeWithGemini: 키 없음 / API 오류는 메시지로 실패', async () => {

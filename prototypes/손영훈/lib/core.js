@@ -2,7 +2,7 @@
 // 네트워크나 chrome.* API를 쓰지 않는다.
 
 export const MAX_EXTRA_PAGES = 2;
-export const MAX_CHARS_PER_PAGE = 6000;
+export const MAX_CHARS_PER_PAGE = 4000;
 export const MIN_USEFUL_CHARS = 200;
 export const DISCLOSURE_COUNT = 5;
 

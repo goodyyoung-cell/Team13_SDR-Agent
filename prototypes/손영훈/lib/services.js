@@ -74,6 +74,7 @@ export async function collectSite(homeUrl, { fetchFn, domParser, renderedHome = 
 // ---------- Gemini ----------
 
 export const GEMINI_MODEL = 'gemini-3.8-flash';
+export const GEMINI_TIMEOUT_MS = 120000;
 
 export async function summarizeWithGemini({ apiKey, pages, disclosures, fetchFn }) {
   if (!apiKey) throw new Error('Gemini API 키가 없습니다. 설정에서 입력하세요.');
@@ -82,6 +83,7 @@ export async function summarizeWithGemini({ apiKey, pages, disclosures, fetchFn 
     contents: [{ role: 'user', parts: [{ text: buildPrompt(pages, disclosures) }] }],
     generationConfig: {
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingLevel: 'low' },
       responseSchema: SUMMARY_SCHEMA
     }
   };
@@ -89,7 +91,7 @@ export async function summarizeWithGemini({ apiKey, pages, disclosures, fetchFn 
     fetchFn,
     url,
     { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify(body) },
-    60000
+    GEMINI_TIMEOUT_MS
   );
   let json;
   try {
