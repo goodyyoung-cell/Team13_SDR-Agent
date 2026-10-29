@@ -1,0 +1,3 @@
+date,sender_name,recipient_email,customer_name,company,message_text,source_id
+2026-09-10,박지현,,최민준,주식회사 핀테크허브,@김민수 핀테크허브 최민준 CTO님 Q1 예산 확정되면 1월에 다시 보자고 하셨어요,slack-001
+2026-09-12,이지은,bjh@cloudworks.io,박지훈,클라우드웍스,박지훈님 어제 미팅 잘 됐어요. 다음 달 파일럿 논의하기로 했습니다.,slack-002

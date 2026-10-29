@@ -1,0 +1,4 @@
+contact_email,contact_name,company,date,channel,rep_name,outcome_note,source_id
+bjh@cloudworks.io,박지훈,클라우드웍스,2026-07-15,email,김민수,가격 제안서 요청. 3주 내 검토 예정이라고 함.,crm-001
+bjh@cloudworks.io,박지훈,클라우드웍스,2026-08-03,call,김민수,연결 안 됨. 다음 주 재연락 요청.,crm-002
+lsj@smartsales.kr,이수진,스마트세일즈,2026-06-01,meeting,최준호,제품 소개 미팅. 이메일 마케팅 도구에 관심 있음.,crm-003

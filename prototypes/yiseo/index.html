@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>접촉 이력 통합 요약</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>var CONFIG = { GEMINI_API_KEY: '', GEMINI_MODEL: 'gemini-2.5-flash' };</script>
+<script src="config.js" onerror=""></script>
+<script src="data/fixtures.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#18181b;line-height:1.5}
+#app{max-width:980px;margin:0 auto;padding:28px 16px}
+h1{font-size:21px;font-weight:700;margin-bottom:4px}
+.subtitle{font-size:13px;color:#71717a;margin-bottom:20px}
+
+/* Source status */
+.source-box{background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.source-box h3{font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.source-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:2px 0}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+
+/* Upload */
+.upload-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+input[type=file]{display:none}
+.file-btn{cursor:pointer;background:#fff;border:1px solid #d4d4d8;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:500;color:#3f3f46}
+.file-btn:hover{background:#f4f4f5}
+.file-name{font-size:13px;color:#71717a}
+.go-btn{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 22px;font-size:13px;font-weight:600;cursor:pointer}
+.go-btn:disabled{background:#93c5fd;cursor:not-allowed}
+.go-btn:not(:disabled):hover{background:#1d4ed8}
+.api-note{font-size:12px;margin-top:6px}
+
+/* Loading */
+#loading{text-align:center;padding:48px;font-size:14px;color:#71717a}
+
+/* Results */
+.summary-bar{background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:14px 16px;margin-bottom:12px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.sc{font-size:13px;color:#52525b}.sc b{font-weight:700}
+.sc-red b{color:#dc2626}.sc-yellow b{color:#d97706}.sc-purple b{color:#7c3aed}.sc-green b{color:#16a34a}
+
+.export-btn{background:#16a34a;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px}
+.export-btn:hover{background:#15803d}
+
+/* Lead card */
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:8px;margin-bottom:8px;overflow:hidden}
+.card-head{display:flex;align-items:center;gap:10px;padding:11px 15px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.b-conf{background:#fee2e2;color:#b91c1c}
+.b-susp{background:#fef3c7;color:#92400e}
+.b-new{background:#dcfce7;color:#166534}
+.b-icsv{background:#ede9fe;color:#5b21b6}
+.lead-name{font-weight:600;font-size:14px}
+.lead-meta{font-size:13px;color:#71717a}
+.label-sel{border:1px solid #d4d4d8;border-radius:6px;padding:5px 9px;font-size:13px;background:#fff;cursor:pointer;margin-left:auto}
+
+/* Duplicate body */
+.dup-body{border-top:1px solid #f0f0f0;padding:14px 15px}
+.dup-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+@media(max-width:640px){.dup-cols{grid-template-columns:1fr}}
+.col-head{font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.hist-row{background:#f9f9f9;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:12px}
+.hist-src{color:#71717a;margin-bottom:2px}
+.hist-note{color:#3f3f46}
+.src-tag{display:inline-block;background:#e4e4e7;color:#52525b;border-radius:4px;padding:0 5px;font-size:11px;margin-left:3px}
+
+/* Summary block */
+.summary-block{border-radius:6px;padding:9px 11px;font-size:13px;margin-bottom:11px}
+.summary-ai{background:#eff6ff;border:1px solid #bfdbfe}
+.summary-fallback{background:#f9fafb;border:1px solid #e5e7eb}
+.summary-none{background:#f9fafb;border:1px solid #e5e7eb;color:#71717a}
+.summary-label{font-size:11px;font-weight:700;color:#2563eb;margin-bottom:3px}
+.summary-fallback .summary-label,.summary-none .summary-label{color:#71717a}
+.src-ids{font-size:11px;color:#71717a;margin-left:4px}
+
+/* Decision row */
+.dec-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dec-btn{border:1px solid #d4d4d8;background:#fff;border-radius:6px;padding:5px 13px;font-size:13px;cursor:pointer;font-weight:500}
+.dec-btn:hover{background:#f4f4f5}
+.dec-same.active{background:#dcfce7;border-color:#22c55e;color:#166534}
+.dec-diff.active{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+
+/* Intra-CSV note */
+.icsv-note{padding:10px 15px 12px;font-size:13px;color:#7c3aed;border-top:1px solid #f0f0f0}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>접촉 이력 통합 요약</h1>
+  <p class="subtitle">이벤트 리드 CSV를 업로드해 기존 접촉 이력과 대조합니다.</p>
+
+  <div id="upload-section">
+    <div class="source-box" id="source-status"></div>
+    <div class="upload-row">
+      <input type="file" id="lead-file" accept=".csv">
+      <label class="file-btn" for="lead-file">리드 CSV 선택</label>
+      <span class="file-name" id="file-name">파일 선택 안 됨</span>
+      <button class="go-btn" id="go-btn" disabled>처리 시작</button>
+    </div>
+    <div class="api-note" id="api-note"></div>
+  </div>
+
+  <div id="loading" hidden>이력 대조 중…</div>
+
+  <div id="results-section" hidden>
+    <div class="summary-bar" id="summary-bar"></div>
+    <button class="export-btn" id="export-btn">CSV 내보내기</button>
+    <div id="lead-list"></div>
+  </div>
+</div>
+
+<script>
+// ── helpers ────────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function ch(c){ return {email:'이메일',call:'전화',meeting:'미팅'}[c]||c }
+
+// ── normalization ───────────────────────────────────────────────────────────
+function normCo(n){
+  if(!n) return ''
+  let s = n.trim()
+  // prefix: ASCII (주), full-width （주）, ㈜, 주식회사
+  s = s.replace(/^\(주\)\s*/i,'')
+  s = s.replace(/^（주）\s*/g,'')   // （주）
+  s = s.replace(/^㈜\s*/g,'')            // ㈜
+  s = s.replace(/^주식회사\s*/g,'')
+  // suffix forms
+  s = s.replace(/\s*\(주\)$/i,'')
+  s = s.replace(/\s*（주）$/g,'')
+  s = s.replace(/\s*㈜$/g,'')
+  return s.trim().toLowerCase()
+}
+function normName(n){ return (n||'').trim().toLowerCase() }
+
+// ── state ───────────────────────────────────────────────────────────────────
+var src = { crm:[], slack:[], email:[] }
+var results = []
+
+// ── init ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  loadFixtures()
+
+  var fileInput = document.getElementById('lead-file')
+  var goBtn     = document.getElementById('go-btn')
+  var fileLabel = document.getElementById('file-name')
+
+  fileInput.addEventListener('change', function(e){
+    var f = e.target.files[0]
+    fileLabel.textContent = f ? f.name : '파일 선택 안 됨'
+    goBtn.disabled = !f
+  })
+  goBtn.addEventListener('click', handleProcess)
+  document.getElementById('export-btn').addEventListener('click', handleExport)
+
+  var note = document.getElementById('api-note')
+  if(CONFIG.GEMINI_API_KEY){
+    note.textContent = 'Gemini API 연결됨 (' + CONFIG.GEMINI_MODEL + ')'
+    note.style.color = '#16a34a'
+  } else {
+    note.textContent = 'Gemini API 키 없음 — 구조화된 필드로 표시합니다 (config.example.js 참고)'
+    note.style.color = '#d97706'
+  }
+})
+
+function loadFixtures(){
+  src.crm   = Papa.parse(FIXTURE_CRM,   {header:true,skipEmptyLines:true}).data
+  src.slack = Papa.parse(FIXTURE_SLACK, {header:true,skipEmptyLines:true}).data
+  src.email = Papa.parse(FIXTURE_EMAIL, {header:true,skipEmptyLines:true}).data
+
+  document.getElementById('source-status').innerHTML =
+    '<h3>이력 소스 (자동 로드됨)</h3>' +
+    row('CRM 활동', src.crm.length) +
+    row('Slack 발췌', src.slack.length) +
+    row('이메일 스레드', src.email.length)
+
+  function row(label, n){
+    return '<div class="source-row"><div class="dot"></div>' + label + ': ' + n + '건</div>'
+  }
+}
+
+// ── matching ────────────────────────────────────────────────────────────────
+function matchLead(lead){
+  var lEmail = (lead.lead_email||'').trim().toLowerCase()
+  var lName  = normName(lead.lead_name)
+  var lCo    = normCo(lead.company)
+  var matches = []
+
+  // CRM: email OR name+company
+  src.crm.forEach(function(r){
+    var rEmail = (r.contact_email||'').trim().toLowerCase()
+    if(lEmail && rEmail && lEmail === rEmail){
+      matches.push({source:'crm', row:r, matchType:'email'})
+    } else if(lName && lCo){
+      if(normName(r.contact_name)===lName && normCo(r.company)===lCo)
+        matches.push({source:'crm', row:r, matchType:'name_company'})
+    }
+  })
+
+  // Slack: email (recipient_email) OR name+company
+  src.slack.forEach(function(r){
+    var rEmail = (r.recipient_email||'').trim().toLowerCase()
+    if(lEmail && rEmail && lEmail === rEmail){
+      matches.push({source:'slack', row:r, matchType:'email'})
+    } else if(lName && lCo){
+      if(normName(r.customer_name)===lName && normCo(r.company)===lCo)
+        matches.push({source:'slack', row:r, matchType:'name_company'})
+    }
+  })
+
+  // Email threads: email only (from or to)
+  src.email.forEach(function(r){
+    var f = (r.from_email||'').trim().toLowerCase()
+    var t = (r.to_email||'').trim().toLowerCase()
+    if(lEmail && (f===lEmail || t===lEmail))
+      matches.push({source:'email', row:r, matchType:'email'})
+  })
+
+  var status = 'new'
+  if(matches.some(function(m){return m.matchType==='email'})) status = 'confirmed_duplicate'
+  else if(matches.length > 0) status = 'suspected_duplicate'
+
+  return {status:status, matches:matches}
+}
+
+// ── LLM ─────────────────────────────────────────────────────────────────────
+function buildPrompt(lead, matches){
+  var hist = matches.map(function(m){
+    var r = m.row
+    if(m.source==='crm')
+      return '['+r.source_id+'] '+r.date+' · '+ch(r.channel)+' · 담당: '+r.rep_name+'\n'+r.outcome_note
+    if(m.source==='slack')
+      return '['+r.source_id+'] '+r.date+' · Slack · 전송자: '+r.sender_name+'\n'+r.message_text
+    return '['+r.source_id+'] '+r.date+' · 이메일\n'+r.from_email+' → '+r.to_email+' | 제목: '+r.subject+'\n'+r.body_snippet
+  }).join('\n\n')
+
+  return '당신은 B2B 영업팀 SDR 어시스턴트입니다.\n' +
+    '다음은 리드 '+lead.lead_name+'님('+lead.company+')에 대한 기존 접촉 이력입니다.\n\n' +
+    hist + '\n\n' +
+    '위 이력만 근거로, SDR이 첫 연락 전에 읽을 한 문장 요약을 한국어로 작성하세요.\n' +
+    '규칙: 예산·타이밍·직함이 이력에 없으면 언급하지 마세요. 반드시 한 문장으로만 작성하세요.'
+}
+
+async function callGemini(prompt){
+  if(!CONFIG.GEMINI_API_KEY) return null
+  try {
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+              CONFIG.GEMINI_MODEL + ':generateContent?key=' + CONFIG.GEMINI_API_KEY
+    var resp = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        generationConfig:{maxOutputTokens:200, temperature:0.2}
+      })
+    })
+    if(!resp.ok) return null
+    var data = await resp.json()
+    var text = data.candidates&&data.candidates[0]&&
+               data.candidates[0].content&&data.candidates[0].content.parts&&
+               data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text
+    return (text||'').trim() || null
+  } catch(e){ return null }
+}
+
+// ── process ──────────────────────────────────────────────────────────────────
+async function handleProcess(){
+  var fileInput = document.getElementById('lead-file')
+  if(!fileInput.files[0]) return
+
+  document.getElementById('upload-section').hidden = true
+  document.getElementById('loading').hidden = false
+
+  var text = await fileInput.files[0].text()
+  var rows = Papa.parse(text, {header:true, skipEmptyLines:true}).data
+
+  // Detect intra-CSV duplicates (flag only the 2nd+ occurrence)
+  var seenEmails = {}
+  results = rows.map(function(lead, i){
+    var lEmail = (lead.lead_email||'').trim().toLowerCase()
+    var intraCSV = lEmail && seenEmails[lEmail] !== undefined
+    if(lEmail && !intraCSV) seenEmails[lEmail] = i
+
+    var m = matchLead(lead)
+    return {
+      lead: lead,
+      matchStatus: m.status,
+      intraCSV: intraCSV,
+      matches: m.matches,
+      llmSummary: null,
+      resolution: null,
+      disposition: null
+    }
+  })
+
+  // LLM calls in parallel for leads with history
+  if(CONFIG.GEMINI_API_KEY){
+    var targets = results.filter(function(r){return r.matches.length > 0})
+    var summaries = await Promise.all(targets.map(function(r){
+      return callGemini(buildPrompt(r.lead, r.matches))
+    }))
+    targets.forEach(function(r, i){ r.llmSummary = summaries[i] })
+  }
+
+  document.getElementById('loading').hidden = true
+  document.getElementById('results-section').hidden = false
+  renderResults()
+}
+
+// ── rendering ────────────────────────────────────────────────────────────────
+function renderResults(){
+  renderBar()
+  renderList()
+}
+
+function renderBar(){
+  var conf  = results.filter(function(r){return r.matchStatus==='confirmed_duplicate'}).length
+  var susp  = results.filter(function(r){return r.matchStatus==='suspected_duplicate'}).length
+  var icsv  = results.filter(function(r){return r.intraCSV}).length
+  var newL  = results.filter(function(r){return r.matchStatus==='new'&&!r.intraCSV}).length
+  document.getElementById('summary-bar').innerHTML =
+    '<div class="sc">전체 <b>'+results.length+'</b>건</div>' +
+    '<div class="sc sc-red">확정 중복 <b>'+conf+'</b></div>' +
+    '<div class="sc sc-yellow">의심 중복 <b>'+susp+'</b></div>' +
+    '<div class="sc sc-purple">CSV 내 중복 <b>'+icsv+'</b></div>' +
+    '<div class="sc sc-green">신규 <b>'+newL+'</b></div>'
+}
+
+function badge(r){
+  if(r.intraCSV) return '<span class="badge b-icsv">CSV 내 중복</span>'
+  if(r.matchStatus==='confirmed_duplicate') return '<span class="badge b-conf">확정 중복</span>'
+  if(r.matchStatus==='suspected_duplicate') return '<span class="badge b-susp">의심 중복</span>'
+  return '<span class="badge b-new">신규</span>'
+}
+
+function labelSel(i, val){
+  var v = val||''
+  return '<select class="label-sel" id="lbl-'+i+'">' +
+    '<option value=""'+(v===''?' selected':'')+'>레이블 선택</option>' +
+    '<option value="follow_up"'+(v==='follow_up'?' selected':'')+'>팔로업</option>' +
+    '<option value="skip"'+(v==='skip'?' selected':'')+'>스킵</option>' +
+    '<option value="reassign"'+(v==='reassign'?' selected':'')+'>재배정</option>' +
+    '</select>'
+}
+
+function histHTML(m){
+  var r = m.row, sid = '<span class="src-tag">'+esc(r.source_id)+'</span>'
+  if(m.source==='crm')
+    return '<div class="hist-row"><div class="hist-src">CRM '+sid+' · '+esc(r.date)+' · '+esc(ch(r.channel))+' · '+esc(r.rep_name)+'</div><div class="hist-note">'+esc(r.outcome_note)+'</div></div>'
+  if(m.source==='slack')
+    return '<div class="hist-row"><div class="hist-src">Slack '+sid+' · '+esc(r.date)+' · '+esc(r.sender_name)+'</div><div class="hist-note">'+esc(r.message_text)+'</div></div>'
+  return '<div class="hist-row"><div class="hist-src">이메일 '+sid+' · '+esc(r.date)+'</div><div class="hist-note"><b>'+esc(r.subject)+'</b><br>'+esc(r.body_snippet)+'</div></div>'
+}
+
+function summaryHTML(r){
+  if(r.matches.length===0)
+    return '<div class="summary-block summary-none"><div class="summary-label">이전 접촉</div>이전 접촉 없음</div>'
+  var ids = [...new Set(r.matches.map(function(m){return m.row.source_id}))].join(', ')
+  if(r.llmSummary)
+    return '<div class="summary-block summary-ai"><div class="summary-label">AI 요약</div>'+esc(r.llmSummary)+'<span class="src-ids">('+esc(ids)+')</span></div>'
+  // Structured fallback
+  var lines = r.matches.map(function(m){
+    var row = m.row
+    if(m.source==='crm') return row.date+' '+ch(row.channel)+' '+row.rep_name+': '+row.outcome_note
+    if(m.source==='slack') return row.date+' Slack '+row.sender_name+': '+row.message_text
+    return row.date+' 이메일 '+row.subject+': '+row.body_snippet
+  })
+  return '<div class="summary-block summary-fallback"><div class="summary-label">구조화된 이력 요약</div>'+esc(lines.join(' | '))+'<span class="src-ids">('+esc(ids)+')</span></div>'
+}
+
+function cardHTML(r, i){
+  var l = r.lead
+  var emailDisp = l.lead_email ? esc(l.lead_email) : '<span style="color:#a1a1aa">이메일 없음</span>'
+  var hasDupBody = r.matches.length > 0 || r.intraCSV
+
+  var head = '<div class="card-head">'+badge(r)+
+    '<span class="lead-name">'+esc(l.lead_name)+'</span>'+
+    '<span class="lead-meta">'+emailDisp+'</span>'+
+    '<span class="lead-meta">'+esc(l.company)+'</span>'+
+    '<span class="lead-meta" style="color:#a1a1aa">'+esc(l.title||'')+'</span>'+
+    (r.matches.length===0 && !r.intraCSV ? '<div style="margin-left:auto">'+labelSel(i,r.disposition)+'</div>' : '') +
+    '</div>'
+
+  if(r.intraCSV && r.matches.length===0){
+    return '<div class="card">'+head+
+      '<div class="icsv-note">이 CSV 내 다른 행과 이메일이 중복됩니다.<div style="margin-top:8px">'+labelSel(i,r.disposition)+'</div></div>'+
+      '</div>'
+  }
+
+  if(r.matches.length===0) return '<div class="card">'+head+'</div>'
+
+  var suspNote = r.matchStatus==='suspected_duplicate'
+    ? ' <span style="font-size:11px;color:#92400e">(이름+회사 일치, 의심)</span>' : ''
+
+  var sameCls = 'dec-btn dec-same' + (r.resolution==='same_person' ? ' active' : '')
+  var diffCls = 'dec-btn dec-diff' + (r.resolution==='different_person' ? ' active' : '')
+
+  var body = '<div class="dup-body">'+
+    '<div class="dup-cols">'+
+      '<div><div class="col-head">신규 리드</div>'+
+        '<div style="font-size:13px;line-height:1.9">'+
+          '<div><b>이름:</b> '+esc(l.lead_name)+'</div>'+
+          '<div><b>회사:</b> '+esc(l.company)+'</div>'+
+          '<div><b>직함:</b> '+esc(l.title||'—')+'</div>'+
+          '<div><b>이메일:</b> '+(l.lead_email?esc(l.lead_email):'—')+'</div>'+
+          '<div><b>이벤트:</b> '+esc(l.event_name||'—')+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div><div class="col-head">기존 접촉 이력 ('+r.matches.length+'건)'+suspNote+'</div>'+
+        r.matches.map(histHTML).join('')+
+      '</div>'+
+    '</div>'+
+    summaryHTML(r)+
+    '<div class="dec-row">'+
+      '<button class="'+sameCls+'" id="same-'+i+'">같은 사람</button>'+
+      '<button class="'+diffCls+'" id="diff-'+i+'">다른 사람</button>'+
+      labelSel(i, r.disposition)+
+    '</div>'+
+  '</div>'
+
+  return '<div class="card">'+head+body+'</div>'
+}
+
+function renderList(){
+  document.getElementById('lead-list').innerHTML =
+    results.map(function(r,i){return cardHTML(r,i)}).join('')
+  attachHandlers()
+}
+
+function attachHandlers(){
+  results.forEach(function(r, i){
+    var sb = document.getElementById('same-'+i)
+    var db = document.getElementById('diff-'+i)
+    if(sb) sb.addEventListener('click', function(){ setRes(i,'same_person') })
+    if(db) db.addEventListener('click', function(){ setRes(i,'different_person') })
+    var ls = document.getElementById('lbl-'+i)
+    if(ls){
+      ls.value = r.disposition||''
+      ls.addEventListener('change', function(e){ results[i].disposition = e.target.value||null })
+    }
+  })
+}
+
+function setRes(i, val){
+  results[i].resolution = val
+  renderList()
+}
+
+// ── export ───────────────────────────────────────────────────────────────────
+function handleExport(){
+  var rows = results.map(function(r){
+    var srcIds = r.matches.map(function(m){return m.row.source_id}).join(',')
+    var summary
+    if(r.matches.length===0){
+      summary = '이전 접촉 없음'
+    } else if(r.llmSummary){
+      summary = r.llmSummary
+    } else {
+      summary = r.matches.map(function(m){
+        var row = m.row
+        if(m.source==='crm') return row.date+' '+ch(row.channel)+' '+row.rep_name+': '+row.outcome_note
+        if(m.source==='slack') return row.date+' Slack '+row.sender_name+': '+row.message_text
+        return row.date+' 이메일 '+row.subject+': '+row.body_snippet
+      }).join(' | ')
+    }
+    var out = Object.assign({}, r.lead)
+    out.disposition   = r.disposition || ''
+    out.match_status  = r.intraCSV ? 'intra_csv_duplicate' : r.matchStatus
+    out.resolution    = r.resolution || ''
+    out.prior_history_summary = summary
+    out.source_ids    = srcIds
+    return out
+  })
+
+  var csv = Papa.unparse(rows)
+  var blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'})
+  var url  = URL.createObjectURL(blob)
+  var a    = document.createElement('a')
+  a.href   = url
+  a.download = 'lead_queue_' + new Date().toISOString().slice(0,10) + '.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+</script>
+</body>
+</html>
