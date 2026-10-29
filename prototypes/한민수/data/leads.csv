@@ -1,0 +1,13 @@
+lead_name,lead_email,company,title,industry,recent_news
+윤서준,sj.yoon@nextlogic.example,넥스트로직,CTO,클라우드 SaaS,신규 API 출시
+배지안,jian@blueoceanlab.example,블루오션랩,대표,데이터 분석 SaaS,
+노유나,yuna@everyshop.example,모두의가게,마케팅팀장,소상공인 플랫폼,서비스 지역 확대
+구민재,mj.koo@datawave.example,데이터웨이브,데이터팀장,데이터 통합 솔루션,
+신하윤,hayoon@flowworks.example,플로우웍스,영업 사원,업무 자동화 SaaS,
+류태민,tm.ryu@smallapp.example,작은앱공방,개발자,모바일 앱 제작,
+안지후,jh.ahn@ecopowertech.example,에코파워텍,영업이사,신재생에너지,공장 증설
+송가온,gaon@withcontents.example,위드콘텐츠,콘텐츠팀장,,
+전현우,hw.jeon@megamarket.example,메가마켓,비즈니스팀장,이커머스,
+차은서,eunseo.cha@signalai.example,시그널AI,팀장,AI 솔루션,신규 투자 유치
+탁수아,sua@tinystudio.example,소형스튜디오,담당자,영상 제작,
+길도하,doha.gil@daehanmfg.example,대한제조,이사,제조업,

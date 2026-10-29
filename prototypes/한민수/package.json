@@ -1,0 +1,10 @@
+{
+  "name": "lead-classifier",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lead classification prototype for Team 13 SDR Agent",
+  "scripts": {
+    "test": "node --test tests/",
+    "build:fixtures": "node tools/build-fixtures.js"
+  }
+}

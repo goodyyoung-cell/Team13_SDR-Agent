@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메일 후속 대응 — SDR Agent</title>
+<style>
+  body { font-family: -apple-system, "Malgun Gothic", sans-serif; margin: 0; color: #1f2a2e; background: #faf8f3; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: #5b6b66; margin: 0 0 12px; font-size: 14px; }
+  .warn { background: #fff4d6; border: 1px solid #e8cf86; border-radius: 6px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; }
+  section { background: #fff; border: 1px solid #e3ded2; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  label { display: block; font-size: 13px; margin: 8px 0 2px; }
+  .info { font-size: 12px; color: #5b6b66; margin-left: 8px; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; align-items: end; }
+  input[type=text], input[type=number], input[type=date] { padding: 5px; }
+  input.wide { width: 360px; }
+  button { cursor: pointer; border: 1px solid #2f6b4f; background: #2f6b4f; color: #fff; border-radius: 6px; padding: 8px 14px; font-size: 14px; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.ghost { background: #fff; color: #2f6b4f; }
+  .day { font-size: 18px; font-weight: 700; margin: 0 10px; }
+  .day .dl { font-size: 14px; color: #5b6b66; font-weight: 400; margin-left: 6px; }
+  .chip { background: #fff; color: #1f2a2e; border: 1px solid #c9c4b6; padding: 4px 10px; font-size: 13px; margin: 0 6px 6px 0; }
+  .chip.on { background: #1f2a2e; color: #fff; border-color: #1f2a2e; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid #eee9dd; }
+  .sub { color: #7a8a85; font-size: 12px; }
+  .mail { display: inline-block; background: #e8f0ec; border-radius: 8px; padding: 1px 7px; margin: 0 4px 3px 0; font-size: 12px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 12px; }
+  .b-wait { background: #eee; color: #555; }
+  .b-go { background: #d9efe2; color: #1d6b43; }
+  .b-draft { background: #e0ebf7; color: #1d4f8a; }
+  .b-human { background: #f3e6d2; color: #8a5a1d; }
+  .b-stop { background: #f6dede; color: #8a1d1d; }
+  details { margin-top: 6px; }
+  pre { white-space: pre-wrap; background: #f6f3ea; border-radius: 6px; padding: 8px; font-family: inherit; font-size: 12px; margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>메일 후속 대응</h1>
+  <p class="lead">첫 메일을 보낸 <b>뒤</b>에 일어나는 일(답장 분류, 1차 응대 초안, 무응답 재발송, 수신 거부 중단)을 날짜별로 보여 줍니다. 프로파일링이 끝난 리드를 받아 씁니다.</p>
+  <div class="warn"><b>실제로 메일을 보내지 않습니다.</b> 발송은 날짜를 돌려 보는 모의 실행이고, 답장도 파일에 적어 둔 가상 답장입니다. 답장 초안은 사람이 확인한 뒤 직접 보냅니다.</div>
+
+  <section>
+    <h2>1. 파일</h2>
+    <button class="ghost" id="sample">샘플 데이터 불러오기</button>
+    <label>프로파일링이 끝난 리드 (CSV: lead_name, lead_email, company, title, industry, recent_news) <input type="file" id="f-leads" accept=".csv"><span class="info" id="leads-info"></span></label>
+    <label>받은 답장 (CSV: lead_email, day, body. day는 첫 메일 발송일로부터 며칠째인지. 모의 실행용) <input type="file" id="f-replies" accept=".csv"><span class="info" id="replies-info"></span></label>
+  </section>
+
+  <section>
+    <h2>2. 설정</h2>
+    <div class="info" style="margin:0 0 8px">후속 메일이 토요일·일요일·공휴일에 걸리면 그다음 평일에 보냅니다. 첫 메일 발송일이 휴일이면 첫 메일도 그다음 평일입니다.</div>
+    <div class="row">
+      <div><label>첫 메일 발송일</label><input type="date" id="s-start" value="2026-11-04"></div>
+      <div><label>공휴일 (YYYY-MM-DD, 쉼표로. 이날은 다음 날로 미룸)</label><input type="text" id="s-holidays" class="wide" value="2026-12-25,2027-01-01"></div>
+      <div><label>후속 메일 (첫 메일로부터 며칠 뒤, 쉼표로)</label><input type="text" id="s-follow" value="4,10"></div>
+      <div><label>마지막 후속 뒤 종료까지(일)</label><input type="number" id="s-end" value="7" style="width:70px"></div>
+      <div><label>"나중에" 재연락(일 뒤)</label><input type="number" id="s-recontact" value="60" style="width:70px"></div>
+      <div><label>자동 응답 뒤 재발송(일 뒤)</label><input type="number" id="s-auto" value="7" style="width:70px"></div>
+    </div>
+    <div class="row">
+      <div><label>제품 이름</label><input type="text" id="s-product" class="wide" value="영업 대응 자동화 서비스"></div>
+      <div><label>한 줄 소개 ("…는 ~합니다"로 들어감)</label><input type="text" id="s-value" class="wide" value="들어온 리드를 정리하고 첫 연락을 준비하는 시간을 줄이도록 돕습니다"></div>
+      <div><label>보내는 사람</label><input type="text" id="s-sender" value="SDR 담당자"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. 날짜 돌려 보기</h2>
+    <button class="ghost" id="prev">−1일</button><span class="day"><span id="day-label">21</span>일째<span id="date-label" class="dl"></span></span><button class="ghost" id="next">+1일</button>
+    <input type="range" id="day" min="0" max="70" value="21" style="width:320px;vertical-align:middle;margin:0 10px">
+    <button class="ghost" id="download" disabled>결과 CSV 받기</button>
+  </section>
+
+  <section id="result" hidden>
+    <div id="filters"></div>
+    <table>
+      <thead><tr><th>리드</th><th>보낸 메일</th><th>받은 답장</th><th>상태 · 다음 행동</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+<script src="data/fixtures.js"></script>
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
